@@ -1,0 +1,281 @@
+---
+title: "High School Seniors t Test"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(DT)
+library(pander)
+library(readr)
+library(mosaic)
+library(dplyr)
+library(DT)
+library(car)
+library(qqplotr)
+library(broom)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+HSS <- read_csv("../../Data/HighSchoolSeniors.csv")
+#If this code does not work: 
+#Use the top menu from RStudio's window to select "Session, Set Working Directory, To Source File Location", and then play this R-chunk into your console to read the HSS data into R. 
+
+HSS_clean <- HSS %>% 
+  filter(!is.na(Sleep_Hours_Schoolnight), !is.na(Gender)) %>% 
+  filter(Sleep_Hours_Schoolnight < 100)
+
+
+  
+```
+
+
+## Background {.tabset .tabset-pills}
+
+Sleep is a cornerstone of a student's overall health, academic performance, and emotional well-being. According to the National Sleep Foundation, high school students require 8–10 hours of sleep per night to function optimally. However, many adolescents fall short of this recommendation due to a combination of factors, including academic pressures, extracurricular commitments, excessive screen time, and early school start times.
+
+This analysis dives into the sleep patterns of high school students on school nights, with a particular focus on two key questions:
+
+**1. Do students meet the recommended 8 hours of sleep per night?**
+
+**2. Are there significant differences in sleep duration between male and female students?**
+
+By addressing these questions, we aim to uncover insights into the sleep habits of adolescents and provide evidence-based recommendations to improve their sleep health. Understanding these patterns is crucial, as insufficient sleep has been linked to poor academic performance, mental health issues, and long-term health risks.
+
+
+
+### Hide
+
+### Show Data
+```{r}
+datatable(HSS_clean)
+```
+
+## Hyphotheses {.tabset .tabset-pills}
+
+To systematically evaluate whether high school students are meeting the recommended sleep duration, we formulated the following hypotheses for each gender group:
+
+**For Male Student:**
+
+
+
+**Null Hypothesis (H₀):** The mean sleep duration on school nights is equal to 8 hours.
+$$
+  H_0: \mu_\text{Male } = 8
+$$
+**Alternative Hypothesis (Hₐ):** The mean sleep duration on school nights is not equal to 8 hours.
+$$
+  H_a: \mu_\text{Male } \neq 8
+$$
+**For Female Student:**
+
+**Null Hypothesis (H₀):** The mean sleep duration on school nights is equal to 8 hours.
+$$
+  H_0: \mu_\text{Female } = 8
+$$
+**Alternative Hypothesis (Hₐ):** The mean sleep duration on school nights is not equal to 8 hours.
+$$
+  H_a: \mu_\text{Female } \neq 8
+$$
+
+The significance level for this study is set at  $\alpha = 0.06$, meaning we will reject the null hypothesis if the p-value is less than 0.06.
+
+
+
+
+## Analysis {.tabset .tabset-pills}
+
+To better understand the sleep patterns of high school students, we analyzed the distribution of sleep hours on school nights by gender. The boxplot below visualizes the sleep duration for male and female students, highlighting key statistics such as the median, interquartile range (IQR), and any outliers. Additionally, a dashed green line at 8 hours represents the recommended sleep duration, allowing us to compare students' actual sleep patterns with this benchmark.
+
+This visualization provides valuable insights into whether students are meeting the recommended sleep guidelines and whether there are notable differences in sleep patterns between genders.
+
+```{r}
+ggplot(HSS_clean, aes(x = Gender, y = Sleep_Hours_Schoolnight, fill = Gender)) +
+  geom_boxplot(alpha = 0.70, outlier.color = "red", outlier.shape = 16) +  
+  geom_hline(yintercept = 8, linetype = "dashed", color = "darkgreen", linewidth = 1) +
+  labs(
+    title = "Sleep Hours During School Nights by Gender",
+    subtitle = "Comparison with Recommended 8 Hours of Sleep",
+    x = "Student Gender",
+    y = "Sleep Hours During School Nights"
+  ) +
+  scale_fill_manual(values = c("Male" = "#1E90FF", "Female" = "#FF69B4")) +  
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),  
+    plot.subtitle = element_text(hjust = 0.5, size = 12),  # Center subtitle
+    axis.title = element_text(size = 12),  # Increase axis label size
+    axis.text = element_text(size = 10)  # Increase axis text size
+  ) +
+  annotate("text", x = 1.5, y = 8.5, label = "Recommended 8 Hours", color = "darkgreen", size = 4)  # Add annotation
+```
+
+**Median Sleep Duration:**
+Both males and females have a median sleep duration of approximately 6 to 7 hours, which is visibly below the 8-hour recommended sleep time.
+
+**Interquartile Range (IQR):**
+The interquartile range (IQR)—which represents the middle 50% of the data—appears quite similar for both genders, indicating comparable sleep patterns.
+
+**Key Observations:**
+
+The median sleep duration for both genders is below 8 hours.
+
+Males have a slightly wider interquartile range (IQR), suggesting greater variability in sleep patterns.
+
+No extreme outliers are present in either group.
+
+
+### Hide
+
+### Show Q-Q Plot
+
+
+```{r}
+
+
+ggplot(HSS_clean, aes(sample = Sleep_Hours_Schoolnight, color = Gender, fill = Gender)) +
+  stat_qq_band(alpha = 0.3, color = NA) +  # Add shaded
+  stat_qq_line(color = "blue", linetype = "dashed", size = 1) + 
+  stat_qq_point(size = 2, alpha = 0.7) +  # Customize points
+  facet_wrap(~ Gender, scales = "free", ncol = 2) +  # Separate plots for Male/Female
+  labs(
+    title = "Sleep Hours on School Nights by Gender",
+    subtitle = "Assessing Normality of Sleep Duration Data",
+    x = "Theoretical Quantiles",
+    y = "Observed Sleep Hours",
+    caption = "Note: The dashed line represents the expected normal distirbution."
+  ) +
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(size = 14, hjust = 0.5),
+    strip.text = element_text(face = "bold", size = 16),  
+    legend.position = "none"  
+  ) +
+  scale_color_manual(values = c("Female" = "#FF69B4", "Male" = "#1E90FF")) +  
+  scale_fill_manual(values = c("Female" = "#FFB6C1", "Male" = "#87CEFA")) 
+
+
+```
+
+
+The data points for both genders closely follow the reference line in the Q-Q plot, indicating that the sleep duration data is approximately normally distributed.
+
+This satisfies the normality assumption required for the t-test.
+
+
+
+### T-Test Results
+
+A one-sample t-test was conducted for each gender group to determine whether the mean sleep duration on school nights significantly differs from the recommended 8 hours. An $\alpha = 0.06$ was used to assess statistical significance.
+
+```{r}
+# Perform t-test for Male students
+t_test_male <- t.test(HSS_clean$Sleep_Hours_Schoolnight[HSS_clean$Gender == "Male"], 
+                      mu = 8, alternative = "two.sided", conf.level = 0.94)
+
+# Perform t-test for Female students
+t_test_female <- t.test(HSS_clean$Sleep_Hours_Schoolnight[HSS_clean$Gender == "Female"], 
+                        mu = 8, alternative = "two.sided", conf.level = 0.94)
+
+# Tidy results
+t_test_male_tidy <- tidy(t_test_male) %>% mutate(Gender = "Male")
+t_test_female_tidy <- tidy(t_test_female) %>% mutate(Gender = "Female")
+
+# Combine results
+t_test_results <- bind_rows(t_test_male_tidy, t_test_female_tidy) %>%
+  select(
+    Gender,
+    Mean_Sleep_Hours = estimate,
+    t_Statistic = statistic,
+    p_Value = p.value,
+    CI_Lower = conf.low,
+    CI_Upper = conf.high
+  )
+
+# Display results with improved formatting
+t_test_results %>%
+  mutate(
+    p_Value = ifelse(p_Value < 0.06, paste0("**", round(p_Value, 4), "**"), round(p_Value, 4)),
+    Mean_Sleep_Hours = round(Mean_Sleep_Hours, 2),
+    t_Statistic = round(t_Statistic, 2),
+    CI_Lower = round(CI_Lower, 2),
+    CI_Upper = round(CI_Upper, 2)
+  ) %>%
+  kable(format = "html", caption = "T-Test Results for Sleep Duration by Gender") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#0073C2FF")
+
+
+```
+
+**Interpretation of Results:**
+
+For both male and female students, the p-values are less than the $\alpha = 0.06$, indicating that the mean sleep duration on school nights is significantly different from 8 hours. 
+
+Additionally, the 94% confidence intervals for both groups do not include 8 hours, which further supports the conclusion that the average sleep duration deviates from the recommended amount.
+
+These findings suggest that students, regardless of gender, are not consistently achieving the recommended 8 hours of sleep on school nights, which may have implications for their academic performance and overall well-being.
+
+
+
+###  Numerical Summary
+
+This section provides descriptive statistics that summarize the sleep duration patterns of male and female students on school nights. By examining these numerical summaries, we can gain insights into the central tendency and variability of sleep hours within each gender group.
+
+```{r}
+summary_stats <- favstats(Sleep_Hours_Schoolnight ~ Gender, data = HSS_clean) %>%
+  mutate(across(where(is.numeric), round, 2))  
+
+# Format the table
+pander(
+  summary_stats,
+  caption = "**Summary Statistics for Sleep Duration by Gender**",
+  style = 'rmarkdown',
+  split.table = Inf, 
+  emphasize.strong.rows = TRUE  
+)
+```
+
+**Interpretation of Summary Statistics:**
+
+On average, both male and female students sleep less than the recommended 8 hours on school nights. Female students report a slightly higher average sleep duration (7.5 hours) compared to male students (7.2 hours). 
+
+The relatively small standard deviations within each group indicate consistent sleep patterns among students of the same gender. However, the difference between genders suggests that additional factors may influence sleep habits, such as lifestyle, academic pressures, or social activities.
+
+
+## Conclusion 
+
+**Key Findings:**
+
+This analysis demonstrates that high school students, on average, obtain less sleep than the recommended 8 hours on school nights. While females report slightly longer sleep durations compared to males, both groups consistently fall short of the recommended. The deviation from the recommended 8 hours is statistically significant for both genders, indicating that insufficient sleep is a widespread issue among adolescents.
+
+**Implications:**
+
+These findings underscore a significant public health concern. Insufficient sleep is associated with adverse effects on academic performance, cognitive function, mental health, and physical well-being. Chronic sleep deprivation can contribute to mood disorders, diminished concentration, and an increased risk of obesity, diabetes, and cardiovascular diseases. Educational institutions and parents should implement strategic interventions, such as modifying school schedules, managing academic workloads, and raising awareness of healthy sleep practices.
+
+**Limitations:**
+
+Despite the valuable insights provided, this study is limited by its reliance on self-reported data, which may be prone to reporting biases and inaccuracies. Additionally, the dataset does not consider other influential factors, such as screen time, caffeine intake, extracurricular activities, and stress levels, which could significantly affect sleep patterns.
+
+## Recommendations
+
+**Educational Initiatives:** 
+Integrate comprehensive sleep education into school curricula, emphasizing the importance of adequate rest and offering practical strategies for improving sleep hygiene. These strategies may include reducing screen exposure before bedtime, establishing consistent sleep routines, and managing time effectively.
+
+**Parental Guidance:** 
+Encourage parents to create home environments conducive to healthy sleep by setting appropriate bedtimes, limiting evening distractions, and modeling good sleep habits.
+
+**Future Research:** 
+Pursue further studies to examine additional factors influencing sleep duration, such as technology use, dietary habits, extracurricular involvement, and mental health status. Longitudinal research could provide a more in-depth understanding of the long-term consequences of sleep deprivation on adolescent development.
+
+**Community Collaboration:** 
+Facilitate partnerships among schools, healthcare providers, and community organizations to develop comprehensive programs that promote the importance of sufficient sleep and its role in overall health and academic success.
+
+
+

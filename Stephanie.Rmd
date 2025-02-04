@@ -1,0 +1,149 @@
+---
+title: "Stephanie's Housing Request"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+**Week 2 Analysis**
+
+```{r, message=FALSE, warning=FALSE}
+library(mosaic)
+library(tidyverse)
+library(pander)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(DT) # If you get an error stating: 
+            # Error in library(DT): there is no package called 'DT'
+            # You will need to run: install.packages("DT") 
+            # in your Console, then try "Knit HTML" again.
+Rent <- read_csv("../Data/Rent.csv")
+```
+
+<br />
+
+## Background
+
+Stephanie[^1] is a student that will be starting school at BYU-Idaho next semester. Suppose she sent you the following email.
+
+----
+
+"Hi. My name is Stephanie. I would like to learn about what housing options I have for living at BYU-Idaho next semester. It will be my first semester there, so I would like to find something that is close to campus and around $300 a month in rent. I'm not too picky on roommates, but I would like somewhere that has a lot of people around so I can get to know as many people as possible. Thanks in advance!"
+
+----
+
+Write your response to Stephanie below. Use the "Rent" dataset, good statistical analysis, and clear writing to make some well supported suggestions to her about apartments that meet her stated criterions. You are free to use other criterion that you think she might find more meaningful as well.
+
+## Response
+Dear Stephanie,
+
+A tailored analysis has been created based on your preferences: apartments with a monthly rent of $300 (approximately $1,200 per semester). The selection includes only apartments with at least 100 residents, providing plenty of opportunities to make new friends. Additionally, the focus is on apartments close to campus, ensuring convenient access to classes.
+
+
+Top 3 Options:
+
+1. Brooklyn Apartments: Average floor plan cost of $995, 144 residents, and 525 meters from the MC building on campus.
+
+2. Royal Crest: Average floor plan cost of $995, 342 residents, and only 427 meters from the MC building.
+
+3. Somerset Apartments: Monthly cost of $1,200, 180 residents, and 467 meters from the MC building.
+
+These apartments are highlighted in the scatter plot below, along with their labels for easy identification. The table provides a summary of the top options.
+Brooklyn Apartments: Average floor plan cost of $995, 144 residents, and 525 meters from the MC building on campus.
+
+
+Below are the following visuals provided:
+
+Scatter Plot: This compares rent cost and distance to campus. Apartments matching your criteria are highlighted in hot pink, making them easy to identify.
+
+Summary Table: This displays the top three apartments that best meet your preferences, including details such as rent, number of residents, and distance to campus.
+
+ 
+
+<!-- Hint, you should probably subset the Rent dataset to only show the "Approved Women's Housing" since Stephanie won't be interested in Male Housing options. Notice how this text in green doesn't show up in the HTML output because we used the HTML comment tags around this text. --> 
+
+```{r}
+# Code to get you started, be sure to use a subset of Rent instead of Rent in this code though.
+
+
+# Graph for Stephany Aparment Requirements. 
+
+# Subset the data for Stephanie's requirements
+stephanie_apt_req <- subset(Rent, Gender == "F" & AvgFloorPlanCost <= 1200 & Residents >= 100 & CrowFlyMetersToMC <= 600)
+
+stephanie_apt_req <- stephanie_apt_req %>% 
+  mutate(AvgFloorPlanCost = round(AvgFloorPlanCost, 2))
+
+# Identify the top 3 apartments
+top_3_apts <- stephanie_apt_req %>%
+  arrange(AvgFloorPlanCost, CrowFlyMetersToMC) %>%
+  slice(1:3)
+
+# Create the scatter plot
+ggplot() +
+  geom_point(Rent, mapping = aes(x = AvgFloorPlanCost, y = CrowFlyMetersToMC), alpha = 0.5) +
+  geom_point(stephanie_apt_req, mapping = aes(x = AvgFloorPlanCost, y = CrowFlyMetersToMC), color = "hotpink", size = 4) +
+  geom_label(data = top_3_apts, aes(x = AvgFloorPlanCost, y = CrowFlyMetersToMC, label = Name), 
+             color = "black", fill = "white", alpha = 0.8, nudge_y = 20) +
+  labs(
+    x = "Rent Cost (USD)",
+    y = "Distance to Campus (Meters)",
+    title = "Stephanie's Apartment Preferences",
+    subtitle = "Highlighting Affordable and Close-to-Campus Options",
+    caption = "Hot pink points indicate apartments meeting Stephanie's preferences. Top 3 options are labeled."
+  ) +
+  theme_minimal()
+
+#Summary Table
+
+summary.table <- top_3_apts %>% 
+  select(Name, AvgFloorPlanCost, Residents, CrowFlyMetersToMC) %>% 
+  mutate(
+    AvgFloorPlanCost = round(AvgFloorPlanCost,2),
+    MonthlyRent = round(AvgFloorPlanCost /4, 2),
+    MonthlyRent = dollar(MonthlyRent),
+    CrowFlyMetersToMC = round(CrowFlyMetersToMC, 2)
+  )
+
+datatable(
+  summary.table, 
+  options = list(lengthMenu = c(3,10,30)),
+  extensions = "Responsive",
+  caption = "Top Aparments Matching Stephanie's Preferences"
+)
+
+
+
+# Calculate monthly rent and format as dollar amount
+summary_table <- top_3_apts %>%
+  select(Name, AvgFloorPlanCost, Residents, CrowFlyMetersToMC) %>%
+  mutate(
+    AvgFloorPlanCost = round(AvgFloorPlanCost, 2),
+    MonthlyRent = round(AvgFloorPlanCost / 4, 2), 
+    MonthlyRent = dollar(MonthlyRent), 
+    CrowFlyMetersToMC = round(CrowFlyMetersToMC, 2),
+  )
+  
+    
+print(summary_table)
+    
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+[^1]: Note that Stephanie is a fictional character who is based on real experiences of many faculty and staff here at BYU-Idaho.
